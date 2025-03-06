@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pengenalan Wajah</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        #video-register, #video-recognize, #canvas-register, #canvas-recognize, #photo-register, #photo-recognize {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+        #canvas-register, #canvas-recognize {
+            display: none;
+        }
+        .btn-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 24px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+        }
+        .user-card {
+            margin-bottom: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .face-confidence-high {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .face-confidence-medium {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .face-confidence-low {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Sistem Pengenalan Wajah</h1>
+        
+        <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab" aria-controls="register" aria-selected="true">Daftar Wajah</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="recognize-tab" data-bs-toggle="tab" data-bs-target="#recognize" type="button" role="tab" aria-controls="recognize" aria-selected="false">Pengenalan Wajah</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">Daftar Pengguna</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="myTabContent">
+            <!-- Tab Pendaftaran Wajah -->
+            <div class="tab-pane fade show active" id="register" role="tabpanel" aria-labelledby="register-tab">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Pendaftaran Wajah Baru</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Nama</label>
+                                    <input type="text" class="form-control" id="name" required>
+                                </div>
+                                <div class="camera-container mb-3">
+                                    <video id="video-register" autoplay></video>
+                                    <canvas id="canvas-register"></canvas>
+                                    <img id="photo-register" alt="Foto yang diambil" class="d-none">
+                                </div>
+                                <button id="capture-btn-register" class="btn btn-primary btn-circle"><i class="bi bi-camera"></i></button>
+                                <button id="retake-btn-register" class="btn btn-warning btn-circle d-none"><i class="bi bi-arrow-counterclockwise"></i></button>
+                                <button id="register-btn" class="btn btn-success w-100 mt-3 d-none">Daftarkan Wajah</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="register-status" class="alert alert-info">
+                                    Silakan isi nama dan ambil foto
+                                </div>
+                                <div id="register-result" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab Pengenalan Wajah -->
+            <div class="tab-pane fade" id="recognize" role="tabpanel" aria-labelledby="recognize-tab">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Pengenalan Wajah</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="camera-container mb-3">
+                                    <video id="video-recognize" autoplay></video>
+                                    <canvas id="canvas-recognize"></canvas>
+                                    <img id="photo-recognize" alt="Foto yang diambil" class="d-none">
+                                </div>
+                                <button id="capture-btn-recognize" class="btn btn-primary btn-circle"><i class="bi bi-camera"></i></button>
+                                <button id="retake-btn-recognize" class="btn btn-warning btn-circle d-none"><i class="bi bi-arrow-counterclockwise"></i></button>
+                                <button id="recognize-btn" class="btn btn-success w-100 mt-3 d-none">Kenali Wajah</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Hasil Pengenalan</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="recognize-status" class="alert alert-info">
+                                    Silakan ambil foto untuk pengenalan wajah
+                                </div>
+                                <div id="recognize-result" class="mt-3">
+                                    <img id="result-image" class="img-fluid d-none" alt="Hasil pengenalan">
+                                </div>
+                                <div id="recognized-faces" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab Daftar Pengguna -->
+            <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Daftar Pengguna Terdaftar</h5>
+                        <button id="refresh-users" class="btn btn-sm btn-primary">Refresh</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="users-list" class="row"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Fungsi untuk memulai kamera
+        function startCamera(videoElement) {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        videoElement.srcObject = stream;
+                    })
+                    .catch(function(error) {
+                        console.error("Tidak dapat mengakses kamera: ", error);
+                        alert("Tidak dapat mengakses kamera. Pastikan Anda memberikan izin akses kamera.");
+                    });
+            } else {
+                alert("Browser Anda tidak mendukung akses kamera.");
+            }
+        }
+
+        // Fungsi untuk menghentikan kamera
+        function stopCamera(videoElement) {
+            if (videoElement.srcObject) {
+                const tracks = videoElement.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+                videoElement.srcObject = null;
+            }
+        }
+
+        // Fungsi untuk mengambil gambar dari video
+        function captureImage(videoElement, canvasElement) {
+            const context = canvasElement.getContext('2d');
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            return canvasElement.toDataURL('image/jpeg');
+        }
+
+        // Ketika dokumen siap
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elemen-elemen untuk pendaftaran
+            const videoRegister = document.getElementById('video-register');
+            const canvasRegister = document.getElementById('canvas-register');
+            const photoRegister = document.getElementById('photo-register');
+            const captureButtonRegister = document.getElementById('capture-btn-register');
+            const retakeButtonRegister = document.getElementById('retake-btn-register');
+            const registerButton = document.getElementById('register-btn');
+            const nameInput = document.getElementById('name');
+            const registerStatus = document.getElementById('register-status');
+            const registerResult = document.getElementById('register-result');
+
+            // Elemen-elemen untuk pengenalan
+            const videoRecognize = document.getElementById('video-recognize');
+            const canvasRecognize = document.getElementById('canvas-recognize');
+            const photoRecognize = document.getElementById('photo-recognize');
+            const captureButtonRecognize = document.getElementById('capture-btn-recognize');
+            const retakeButtonRecognize = document.getElementById('retake-btn-recognize');
+            const recognizeButton = document.getElementById('recognize-btn');
+            const recognizeStatus = document.getElementById('recognize-status');
+            const recognizeResult = document.getElementById('recognize-result');
+            const resultImage = document.getElementById('result-image');
+            const recognizedFaces = document.getElementById('recognized-faces');
+
+            // Elemen-elemen untuk daftar pengguna
+            const usersList = document.getElementById('users-list');
+            const refreshUsersButton = document.getElementById('refresh-users');
+
+            // API URL
+            const API_URL = 'http://127.0.0.1:5000/api';
+
+            // Memulai kamera saat tab aktif
+            document.getElementById('register-tab').addEventListener('click', function() {
+                stopCamera(videoRecognize);
+                startCamera(videoRegister);
+            });
+
+            document.getElementById('recognize-tab').addEventListener('click', function() {
+                stopCamera(videoRegister);
+                startCamera(videoRecognize);
+            });
+
+            document.getElementById('users-tab').addEventListener('click', function() {
+                stopCamera(videoRegister);
+                stopCamera(videoRecognize);
+                loadUsers();
+            });
+
+            // Memulai kamera di tab pertama
+            startCamera(videoRegister);
+
+            // Event handler untuk tombol ambil gambar (pendaftaran)
+            captureButtonRegister.addEventListener('click', function() {
+                const imageData = captureImage(videoRegister, canvasRegister);
+                photoRegister.src = imageData;
+                photoRegister.classList.remove('d-none');
+                videoRegister.classList.add('d-none');
+                captureButtonRegister.classList.add('d-none');
+                retakeButtonRegister.classList.remove('d-none');
+                registerButton.classList.remove('d-none');
+            });
+
+            // Event handler untuk tombol ambil ulang (pendaftaran)
+            retakeButtonRegister.addEventListener('click', function() {
+                photoRegister.classList.add('d-none');
+                videoRegister.classList.remove('d-none');
+                captureButtonRegister.classList.remove('d-none');
+                retakeButtonRegister.classList.add('d-none');
+                registerButton.classList.add('d-none');
+            });
+
+            // Event handler untuk tombol daftar
+            registerButton.addEventListener('click', function() {
+                const name = nameInput.value.trim();
+                if (!name) {
+                    registerStatus.className = 'alert alert-danger';
+                    registerStatus.textContent = 'Nama tidak boleh kosong!';
+                    return;
+                }
+
+                registerStatus.className = 'alert alert-info';
+                registerStatus.textContent = 'Mendaftarkan wajah...';
+                registerButton.disabled = true;
+                
+                // Tampilkan loading spinner
+                registerResult.innerHTML = '<div class="loading-spinner"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+                // Kirim data ke server
+                fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        image: photoRegister.src
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        registerStatus.className = 'alert alert-success';
+                        registerStatus.textContent = data.message;
+                        registerResult.innerHTML = `<div class="alert alert-success">
+                            <h5>Wajah berhasil didaftarkan!</h5>
+                            <p>Nama: ${name}</p>
+                            <p>ID: ${data.user_id}</p>
+                        </div>`;
+                        
+                        // Reset form
+                        nameInput.value = '';
+                        photoRegister.classList.add('d-none');
+                        videoRegister.classList.remove('d-none');
+                        captureButtonRegister.classList.remove('d-none');
+                        retakeButtonRegister.classList.add('d-none');
+                        registerButton.classList.add('d-none');
+                    } else {
+                        registerStatus.className = 'alert alert-danger';
+                        registerStatus.textContent = data.error || 'Terjadi kesalahan';
+                        registerResult.innerHTML = '';
+                    }
+                    registerButton.disabled = false;
+                })
+                .catch(error => {
+                    registerStatus.className = 'alert alert-danger';
+                    registerStatus.textContent = 'Terjadi kesalahan: ' + error.message;
+                    registerResult.innerHTML = '';
+                    registerButton.disabled = false;
+                });
+            });
+
+            // Event handler untuk tombol ambil gambar (pengenalan)
+            captureButtonRecognize.addEventListener('click', function() {
+                const imageData = captureImage(videoRecognize, canvasRecognize);
+                photoRecognize.src = imageData;
+                photoRecognize.classList.remove('d-none');
+                videoRecognize.classList.add('d-none');
+                captureButtonRecognize.classList.add('d-none');
+                retakeButtonRecognize.classList.remove('d-none');
+                recognizeButton.classList.remove('d-none');
+            });
+
+            // Event handler untuk tombol ambil ulang (pengenalan)
+            retakeButtonRecognize.addEventListener('click', function() {
+                photoRecognize.classList.add('d-none');
+                videoRecognize.classList.remove('d-none');
+                captureButtonRecognize.classList.remove('d-none');
+                retakeButtonRecognize.classList.add('d-none');
+                recognizeButton.classList.add('d-none');
+                resultImage.classList.add('d-none');
+                recognizedFaces.innerHTML = '';
+            });
+
+            // Event handler untuk tombol kenali
+            recognizeButton.addEventListener('click', function() {
+                recognizeStatus.className = 'alert alert-info';
+                recognizeStatus.textContent = 'Mengenali wajah...';
+                recognizedFaces.innerHTML = '';
+                recognizeButton.disabled = true;
+                
+                // Tampilkan loading spinner
+                recognizeResult.innerHTML = '<div class="loading-spinner"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+                // Kirim data ke server
+                fetch(`${API_URL}/recognize`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: photoRecognize.src
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        recognizeStatus.className = 'alert alert-success';
+                        recognizeStatus.textContent = data.message;
+                        
+                        // Tampilkan gambar hasil
+                        if (data.result_image) {
+                            resultImage.src = data.result_image;
+                            resultImage.classList.remove('d-none');
+                            recognizeResult.innerHTML = '';
+                        }
+                        
+                        // Tampilkan daftar wajah yang dikenali
+                        if (data.faces && data.faces.length > 0) {
+                            const facesHtml = data.faces.map((face, index) => {
+                                let confidenceClass = 'face-confidence-low';
+                                if (face.confidence > 85) {
+                                    confidenceClass = 'face-confidence-high';
+                                } else if (face.confidence > 70) {
+                                    confidenceClass = 'face-confidence-medium';
+                                }
+                                
+                                return `
+                                    <div class="card mb-2">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Wajah #${index + 1}: ${face.name}</h5>
+                                            <p class="card-text ${confidenceClass}">Tingkat kepercayaan: ${face.confidence.toFixed(2)}%</p>
+                                            <p class="card-text small">Lokasi: (${face.location.left}, ${face.location.top}) - (${face.location.right}, ${face.location.bottom})</p>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('');
+                            recognizedFaces.innerHTML = facesHtml;
+                        } else {
+                            recognizedFaces.innerHTML = '<div class="alert alert-warning">Tidak ada wajah yang dikenali</div>';
+                        }
+                    } else {
+                        recognizeStatus.className = 'alert alert-danger';
+                        recognizeStatus.textContent = data.error || 'Terjadi kesalahan';
+                        recognizeResult.innerHTML = '';
+                    }
+                    recognizeButton.disabled = false;
+                })
+                .catch(error => {
+                    recognizeStatus.className = 'alert alert-danger';
+                    recognizeStatus.textContent = 'Terjadi kesalahan: ' + error.message;
+                    recognizeResult.innerHTML = '';
+                    recognizeButton.disabled = false;
+                });
+            });
+
+            // Fungsi untuk memuat daftar pengguna
+            function loadUsers() {
+                usersList.innerHTML = '<div class="col-12 text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+                
+                fetch(`${API_URL}/users`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.users.length === 0) {
+                            usersList.innerHTML = '<div class="col-12 text-center">Belum ada pengguna terdaftar</div>';
+                            return;
+                        }
+                        
+                        const usersHtml = data.users.map(user => {
+                            return `
+                                <div class="col-md-4 mb-3">
+                                    <div class="card user-card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">${user.name}</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <img class="camera-container" src='${user.image_path}' </img>
+                                            <p class="card-text">ID: ${user.id}</p>
+                                            <p class="card-text">Terdaftar: ${new Date(user.created_at).toLocaleString()}</p>
+                                            <button class="btn btn-sm btn-danger delete-user" data-id="${user.id}">Hapus</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        
+                        usersList.innerHTML = usersHtml;
+                        
+                        // Tambahkan event listener untuk tombol hapus
+                        document.querySelectorAll('.delete-user').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const userId = this.getAttribute('data-id');
+                                if (confirm('Apakah Anda yakin ingin menghapus pengguna ini?')) {
+                                    deleteUser(userId);
+                                }
+                            });
+                        });
+                    } else {
+                        usersList.innerHTML = `<div class="col-12 text-center text-danger">${data.error || 'Terjadi kesalahan'}</div>`;
+                    }
+                })
+                .catch(error => {
+                    usersList.innerHTML = `<div class="col-12 text-center text-danger">Terjadi kesalahan: ${error.message}</div>`;
+                });
+            }
+
+            // Fungsi untuk menghapus pengguna
+            function deleteUser(userId) {
+                fetch(`${API_URL}/users/${userId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        loadUsers();  // Muat ulang daftar setelah penghapusan
+                    } else {
+                        alert(data.error || 'Terjadi kesalahan saat menghapus pengguna');
+                    }
+                })
+                .catch(error => {
+                    alert('Terjadi kesalahan: ' + error.message);
+                });
+            }
+
+            // Event handler untuk tombol refresh daftar pengguna
+            refreshUsersButton.addEventListener('click', function() {
+                loadUsers();
+            });
+
+            // Muat daftar pengguna saat halaman dimuat
+            document.getElementById('users-tab').addEventListener('shown.bs.tab', function() {
+                loadUsers();
+            });
+        });
+    </script>
+</body>
+</html>

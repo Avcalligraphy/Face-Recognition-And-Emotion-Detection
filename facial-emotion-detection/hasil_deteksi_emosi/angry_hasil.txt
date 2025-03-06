@@ -1,0 +1,3 @@
+Hasil deteksi untuk: angry.jpeg
+==================================================
+Emosi: happy, Confidence: 0.73

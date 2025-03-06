@@ -1,0 +1,3 @@
+Hasil deteksi untuk: sad.jpg
+==================================================
+Emosi: happy, Confidence: 0.54

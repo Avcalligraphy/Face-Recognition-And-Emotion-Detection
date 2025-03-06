@@ -1,0 +1,5 @@
+# requirements.txt
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.3
+Flask-CORS==3.0.10
+PyMySQL==1.0.3
